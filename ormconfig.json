@@ -1,0 +1,7 @@
+{
+    "type": "sqlite",
+    "database": "task-manager.db",
+    "synchronize": true,
+    "entities": ["dist/**/*.entity{.ts,.js}"]
+  }
+  
