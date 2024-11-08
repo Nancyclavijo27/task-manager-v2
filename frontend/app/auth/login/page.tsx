@@ -1,31 +1,47 @@
-// app/auth/login/page.tsx
+"use client"; // Asegúrate de que este archivo se ejecute del lado del cliente
 
-"use client"; // Asegúrate de que el archivo sea un componente del cliente
-
-import { useAuth } from '../../../context/AuthContext'; // Asegúrate de que la ruta de importación sea correcta
-import { useState } from 'react';
+import { useState } from "react";
+import { useRouter } from "next/navigation"; // Importa el hook desde 'next/navigation'
+import LoginForm from "../../../components/LoginForm"; // Formulario de login
+import useAuth from "../../../hooks/useAuth"; // Hook para la autenticación
 
 const LoginPage = () => {
-  const { login } = useAuth(); // Ahora se puede usar en el cliente
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login } = useAuth(); // Función de login desde el hook
+  const [loading, setLoading] = useState(false); // Estado de carga
+  const [error, setError] = useState(""); // Para mostrar errores
+  const router = useRouter(); // Usamos el hook useRouter para la redirección
 
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); // Previene el comportamiento por defecto del formulario
-    await login(email, password);
+  // Maneja el submit del formulario
+  const handleLogin = async (email: string, password: string) => {
+    setLoading(true); // Marca como cargando
+    setError(""); // Limpia errores previos
+    try {
+      const response = await login(email, password); // Llamada de autenticación
+      const { access_token } = response.data;
+
+      // Verifica si el token está presente
+      if (access_token) {
+        // Guarda el token en localStorage
+        localStorage.setItem("auth_token", access_token);
+
+        // Redirige al dashboard
+        router.push("/dashboard"); // Redirige a dashboard después de login
+      } else {
+        setError("No se recibió un token válido."); // Error si no hay token
+      }
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error); // Manejo de error
+      setError("Hubo un error al iniciar sesión, por favor intente nuevamente.");
+    } finally {
+      setLoading(false); // Finaliza la carga
+    }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-    <h1 className="text-4xl font-bold mb-4">Iniciar Sesión</h1>
-    <form className="flex flex-col space-y-4">
-      <input type="email" placeholder="Correo electrónico" className="border p-2" required />
-      <input type="password" placeholder="Contraseña" className="border p-2" required />
-      <button type="submit" className="bg-blue-600 text-white py-2 rounded hover:bg-blue-500">
-        Iniciar Sesión
-      </button>
-    </form>
-  </div>
+    <>
+      {error && <div className="error">{error}</div>} {/* Muestra el error si existe */}
+      <LoginForm type="login" onSubmit={handleLogin} loading={loading} />
+    </>
   );
 };
 
